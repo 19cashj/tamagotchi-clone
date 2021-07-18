@@ -1,0 +1,48 @@
+* {
+    margin: 0;
+    padding: 0;
+}
+
+#parentGotchi {
+    background-color: red;
+    height: 550px;
+    width: 450px;
+    border-radius: 80%;
+    margin: 50px auto;
+    border: 3px solid rgb(90, 6, 6)
+}
+
+canvas {
+    border: 3px solid yellow;
+    position: absolute;
+    margin: 125px 75px;
+    background-color: rgb(172, 228, 191);
+}
+
+.buttons {
+    background-color: yellow;
+    border: 5px solid rgb(100, 100, 7);
+    width: 35px;
+    height: 35px;
+    border-radius: 100%;
+    position: absolute;
+    margin-top: 425px;
+    cursor: pointer;
+}
+
+.buttonActive {
+    background-color: rgb(100, 100, 7);
+}
+
+#button1 {
+    margin-left: 105px;
+}
+
+#button2 {
+    margin-left: 205px;
+    margin-top: 450px;
+}
+
+#button3 {
+    margin-left: 305px;
+}
