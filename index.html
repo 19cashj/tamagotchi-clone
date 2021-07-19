@@ -8,14 +8,22 @@
     <link rel="stylesheet" href="styles.css">
 </head>
 <body>
-    <div id="parentGotchi">
-        <canvas id="screen" height="250px"></canvas>
-        <div id="buttonContainer">
-            <div class="buttons" id="button1" onclick="buttonAnimate(1)"></div>
-            <div class="buttons" id="button2" onclick="buttonAnimate(2)"></div>
-            <div class="buttons" id="button3" onclick="buttonAnimate(3)"></div>
+    <header>
+        <h1 id="headTimer"></h1>
+    </header>
+    <section id="mainContainer">
+        <div id="parentGotchi">
+            <canvas id="screen" height="250px"></canvas>
+            <div id="buttonContainer">
+                <button class="buttons" id="button1" onclick="button1()"></button>
+                <button class="buttons" id="button2" onclick="button2()"></button>
+                <button class="buttons" id="button3" onclick="button3()"></button>
+            </div>
         </div>
-    </div>
+        <div id="communicator">
+            <p id="msg">> Lorem ipsum dolor sit, amet consectetur adipisicing elit. Asperiores architecto facilis ad officia omnis deleniti unde quaerat laboriosam</p>
+        </div>
+    </section>
     <script src="index.js"></script>
 </body>
 </html>
