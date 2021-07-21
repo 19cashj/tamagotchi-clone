@@ -1,5 +1,11 @@
 let gameState = "start";
 let currentTime = new Date();
+const canvas = document.getElementById("screen");
+const ctx = canvas.getContext("2d");
+let canvasPixels = [];
+let shadedPixels = [];
+let selectedPixel = 0;
+let debugDrawMode = false;
 
 document.addEventListener('keydown', buttonChoose, false);
 
@@ -8,6 +14,75 @@ function updateTime() {
         currentTime = new Date();
         document.getElementById("headTimer").textContent = currentTime;
     }, 1000);
+}
+
+function canvasDraw(i, temp) {
+    if (temp != true) {
+        ctx.fillStyle = `black`;
+        shadedPixels.push([canvasPixels[i][0], canvasPixels[i][1]]);
+    }
+    else {
+        ctx.fillStyle = `blue`;
+    }
+    ctx.fillRect(canvasPixels[i][0], canvasPixels[i][1], 10, 10);
+}
+
+function canvasErase(i, temp) {
+    ctx.fillStyle = `rgb(172, 228, 191)`;
+    ctx.fillRect(canvasPixels[i][0], canvasPixels[i][1], 10, 10);
+    if (temp != true) {
+        shadedPixels.splice(shadedPixels.indexOf([canvasPixels[i]]), 1);
+    }
+}
+
+function canvasInit() {
+    for (i=0, x=0, y=0; i<=797; i++) {
+        if (x > canvas.width) {
+            y +=10;
+            x = 0;
+        }
+        else {
+            let currentPixel = [x,y];
+            canvasPixels.push(currentPixel);
+            x+=10;
+        }
+    }
+    for (i = 0; i<100;i++) {
+        canvasDraw(i, false);
+    }
+}
+
+function drawPixelDebug(key) {
+    debugDrawMode = true;
+    switch(key) {
+        case "w":
+            canvasErase(selectedPixel, true);
+            selectedPixel -= 31;
+            break;
+        case "s":
+            canvasErase(selectedPixel, true);
+            selectedPixel += 31;
+            break;
+        case "d":
+            canvasErase(selectedPixel, true);
+            selectedPixel ++;
+            break;
+        case "a":
+            canvasErase(selectedPixel, true);
+            selectedPixel --;
+            break;
+        case "Shift":
+
+            break;
+        default: //default (no key) will just start the interval
+            flashInterval = setInterval(() => {
+                canvasDraw(selectedPixel, true);
+                setTimeout(() => {
+                    canvasErase(selectedPixel, true);
+                }, 100);
+            }, 600);
+            break;
+    }
 }
 
 function buttonChoose(e) {
@@ -21,6 +96,17 @@ function buttonChoose(e) {
             break;
         case "c":
             button3();
+            break;
+        case "w":
+        case "a":
+        case "s":
+        case "d":
+        case "Shift":
+            if (debugDrawMode = true) {
+                drawPixelDebug(keyPressed);
+            }
+            break;
+        default:
             break;
     }
 }
@@ -64,4 +150,5 @@ function button3(gameState) {
     }
 }
 
+canvasInit();
 updateTime();
