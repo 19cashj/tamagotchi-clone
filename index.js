@@ -4,7 +4,9 @@ const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
 let canvasPixels = [];
 let shadedPixels = [];
+let shadedPixelsNums = [];
 let selectedPixel = 0;
+let prevPixel = 0;
 let debugDrawMode = false;
 
 document.addEventListener('keydown', buttonChoose, false);
@@ -17,12 +19,10 @@ function updateTime() {
 }
 
 function canvasDraw(i, temp) {
+    ctx.fillStyle = `black`;
     if (temp != true) {
-        ctx.fillStyle = `black`;
         shadedPixels.push([canvasPixels[i][0], canvasPixels[i][1]]);
-    }
-    else {
-        ctx.fillStyle = `blue`;
+        shadedPixelsNums.push(i);
     }
     ctx.fillRect(canvasPixels[i][0], canvasPixels[i][1], 10, 10);
 }
@@ -32,6 +32,7 @@ function canvasErase(i, temp) {
     ctx.fillRect(canvasPixels[i][0], canvasPixels[i][1], 10, 10);
     if (temp != true) {
         shadedPixels.splice(shadedPixels.indexOf([canvasPixels[i]]), 1);
+        shadedPixelsNums.splice(shadedPixelsNums.indexOf(i), 1);
     }
 }
 
@@ -47,39 +48,51 @@ function canvasInit() {
             x+=10;
         }
     }
-    for (i = 0; i<100;i++) {
-        canvasDraw(i, false);
-    }
 }
 
 function drawPixelDebug(key) {
     debugDrawMode = true;
+    function pixelMove(change) {
+        prevPixel = selectedPixel;
+        selectedPixel += change;
+            if (shadedPixelsNums.includes(prevPixel)) {
+                canvasDraw(prevPixel, true);
+            }
+            else {
+                canvasErase(prevPixel, true);
+            }
+    }
     switch(key) {
         case "w":
-            canvasErase(selectedPixel, true);
-            selectedPixel -= 31;
+            pixelMove(-31)
             break;
         case "s":
-            canvasErase(selectedPixel, true);
-            selectedPixel += 31;
+            pixelMove(31);
             break;
         case "d":
-            canvasErase(selectedPixel, true);
-            selectedPixel ++;
+            pixelMove(1);
             break;
         case "a":
-            canvasErase(selectedPixel, true);
-            selectedPixel --;
+            pixelMove(-1);
             break;
         case "Shift":
-
+            if (shadedPixelsNums.includes(selectedPixel)) {
+                canvasErase(selectedPixel, false);
+            }
+            else {
+                canvasDraw(selectedPixel, false);
+            }
+            break;
+        case "Escape":
+            debugDrawMode = false;
+            clearInterval(flashInterval);
             break;
         default: //default (no key) will just start the interval
             flashInterval = setInterval(() => {
                 canvasDraw(selectedPixel, true);
                 setTimeout(() => {
                     canvasErase(selectedPixel, true);
-                }, 100);
+                }, 300);
             }, 600);
             break;
     }
@@ -102,11 +115,13 @@ function buttonChoose(e) {
         case "s":
         case "d":
         case "Shift":
+        case "Escape":
             if (debugDrawMode = true) {
                 drawPixelDebug(keyPressed);
             }
             break;
         default:
+            //console.log(e.key);
             break;
     }
 }
