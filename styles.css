@@ -41,11 +41,37 @@ body {
     align-self: center;
 }
 
+.iconSection {
+    width: 306px;
+    height: 50px;
+    background-color: yellow;
+    position: absolute;
+}
+
+#topSection {
+    margin-top: 110px;
+    margin-left: 70px;
+}
+
 canvas {
     border: 3px solid yellow;
     position: absolute;
-    margin: 125px 75px;
+    margin: 160px 70px;
     background-color: rgb(172, 228, 191);
+}
+
+#bottomSection {
+    margin-top: 366px;
+    margin-left: 70px;
+}
+
+.menu {
+    padding: 3px;
+    margin-left: 12px;
+}
+
+.grayedOut {
+    opacity: 0.2;
 }
 
 .buttons {
@@ -55,7 +81,7 @@ canvas {
     height: 35px;
     border-radius: 100%;
     position: absolute;
-    margin-top: 425px;
+    margin-top: 450px;
     cursor: pointer;
 }
 
@@ -69,7 +95,7 @@ canvas {
 
 #button2 {
     margin-left: 205px;
-    margin-top: 450px;
+    margin-top: 475px;
 }
 
 #button3 {
@@ -86,4 +112,6 @@ canvas {
     font-size: 25px;
     padding: 25px;
     margin: 20px auto;
+    /* */
+    display: none;
 }

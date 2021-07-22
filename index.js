@@ -37,7 +37,7 @@ function canvasErase(i, temp) {
 }
 
 function canvasInit() {
-    for (i=0, x=0, y=0; i<=797; i++) {
+    for (i=0, x=0, y=0; i<=618; i++) {
         if (x > canvas.width) {
             y +=10;
             x = 0;

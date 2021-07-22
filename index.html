@@ -14,7 +14,21 @@
     </header>
     <section id="mainContainer">
         <div id="parentGotchi">
-            <canvas id="screen" height="250px"></canvas>
+            <div id="screenContainer">
+                <div id="topSection" class="iconSection">
+                    <img class="menu grayedOut" src="img/foodIcon.png">
+                    <img class="menu grayedOut" src="img/lightIcon.png">
+                    <img class="menu grayedOut" src="img/gameIcon.png">
+                    <img class="menu grayedOut" src="img/medIcon.png">
+                </div>
+                <canvas id="screen" height="200px"></canvas>
+                <div id="bottomSection" class="iconSection">
+                    <img class="menu grayedOut" src="img/plungerIcon.png">
+                    <img class="menu grayedOut" src="img/scaleIcon.png">
+                    <img class="menu grayedOut" src="img/discIcon.png">
+                    <img class="menu grayedOut" src="img/moodIcon.png">
+                </div>
+            </div>
             <div id="buttonContainer">
                 <button class="buttons" id="button1" onclick="button1()"></button>
                 <button class="buttons" id="button2" onclick="button2()"></button>
