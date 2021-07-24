@@ -9,12 +9,14 @@ let shadedPixelsNums = [];
 let selectedPixel = 0;
 let prevPixel = 0;
 let debugDrawMode = false;
+let selectedIcon = 0;
 
 document.addEventListener('keydown', buttonChoose, false);
 
 class Cloneagotchi {
-    constructor(age, growthStage, species, happiness, hunger, weight, discipline, illness, careMistakes) {
+    constructor(age, sex, growthStage, species, happiness, hunger, weight, discipline, illness, careMistakes) {
         this.age = age;
+        this.sex = sex; //0 is male, 1 is female (only that way so the tenary operators work with true/false)
         this.growthStage = growthStage;
         this.species = species;
         this.happiness = happiness;
@@ -24,9 +26,33 @@ class Cloneagotchi {
         this.illness = illness;
         this.careMistakes = careMistakes;
     }
+    async mainAnimate() {
+    let randNum = 0//Math.round(Math.random()*3); There will be three different idle animations for the main screen
+        switch (this.growthStage) {
+            case "infant":
+            default:
+                if (randNum == 0) {
+                    const { mInfantMain0 } = await import('./pixelData.js');
+                    const { fInfantMain0 } = await import('./pixelData.js');
+                    this.sex ? playAnimation(fInfantMain0, 750):playAnimation(mInfantMain0, 750);
+                }
+                else if (randNum == 1) {
+                    const { mInfantMain1 } = await import('./pixelData.js');
+                    const { fInfantMain1 } = await import('./pixelData.js');
+                    this.sex ? playAnimation(fInfantMain1, 750):playAnimation(mInfantMain1, 750);
+                }
+                else if (randNum == 2) {
+                    const { mInfantMain2 } = await import('./pixelData.js');
+                    const { fInfantMain2 } = await import('./pixelData.js');
+                    this.sex ? playAnimation(fInfantMain2, 750):playAnimation(mInfantMain2, 750);
+                }
+                break;
+        }
+    }
 }
 
 async function stateHandler(state) {
+    let mainInterval;
     gameState = state;
     switch (state) {
         case "title":
@@ -35,29 +61,46 @@ async function stateHandler(state) {
             playAnimation(titleAnimation, 500);
             setTimeout(() => {
                 canvasClear();
-                if (localStorage.getItem("cloneagotchiData") === null) {
+                //if (localStorage.getItem("cloneagotchiData") === null) {
                     stateHandler("beginning");
-                  }
+                //  }
+                //else {
+                //    loadGame(); //loading not finished yet
+                //    stateHandler("main");
+                //}
             }, 3150);
             break;
         case "beginning":
             playSound("beep1");
             const { egg } = await import('./pixelData.js');
-            const { eggHatching } = await import('./pixelData.js');
+            const { eggHatchingFemale } = await import('./pixelData.js');
+            const { eggHatchingMale } = await import('./pixelData.js');
             drawPreset(egg);
             setTimeout(() => {
+                let sexSelector = Math.round(Math.random());
                 playSound("panicNoti");
-                playAnimation(eggHatching, 750);
+                if(sexSelector == 0) {
+                    cloneagotchi = new Cloneagotchi(0, 0, "infant", "na", 0, 0, 0, 0, 0, 0);
+                    playAnimation(eggHatchingMale, 750);
+                }
+                else {
+                    cloneagotchi = new Cloneagotchi(0, 1, "infant", "na", 0, 0, 0, 0, 0, 0);
+                    playAnimation(eggHatchingFemale, 750);
+                }
             }, 10000);
             setTimeout(() => {
                 playSound("birth");
-                cloneagotchi = new Cloneagotchi(0, "egg", "na", 0, 0, 0, 0, 0, 0);
-                localStorage.setItem('cloneagotchiData', JSON.stringify(cloneagotchi));
-                console.log(localStorage.getItem('cloneagotchiData'));
+                //localStorage.setItem('cloneagotchiData', JSON.stringify(cloneagotchi));
+                //console.log(localStorage.getItem('cloneagotchiData'));
                 stateHandler("main");
-            }, 17000);
+            }, 16800);
             break;
         case "main":
+            mainInterval = setInterval(() => {
+            cloneagotchi.mainAnimate();
+            }, 3001);
+            updateTime();
+            mainIcon(0);
             break;
         case "foodMenu":
             break;
@@ -136,6 +179,8 @@ function playAnimation(frames, speed) {
         framePixels = frames[f]
         if (f == frames.length) { //Animation will stop at the end of the frames, could add option to loop
             clearInterval(animateInterval);
+            framePixels = frames[0]
+            f = 0;
         }
     }, speed);
 }
@@ -224,12 +269,39 @@ function buttonChoose(e) {
         case "d":
         case "Shift":
         case "Escape":
-            if (debugDrawMode = true) {
+            if (debugDrawMode == true) {
                 drawPixelDebug(keyPressed);
             }
             break;
         default:
             //console.log(e.key);
+            break;
+    }
+}
+function mainIcon(button) {
+    const mainIcons = document.getElementsByClassName("menu");
+    switch(button){
+        case 0: //called by just loading the main gamestate
+            selectedIcon = 0;
+            mainIcons[0].classList.remove("grayedOut");
+            break;
+        case 1: //called from button1
+        default:
+            playSound("beep2")
+            selectedIcon++;
+            if(selectedIcon > 7) {
+                selectedIcon = 0;
+                mainIcons[0].classList.remove("grayedOut");
+                mainIcons[7].classList.add("grayedOut");
+            }
+            if (selectedIcon == 0) {
+                mainIcons[0].classList.remove("grayedOut");
+                mainIcons[7].classList.add("grayedOut");
+            }
+            else {
+                mainIcons[selectedIcon - 1].classList.add("grayedOut");
+                mainIcons[selectedIcon].classList.remove("grayedOut");
+            }
             break;
     }
 }
@@ -242,7 +314,9 @@ function button1() {
         button.classList.remove("buttonActive");
     }, 100);
     switch (state) {
-        case "title":
+        case "main":
+            mainIcon(1);
+            break;
         default:
             break;
     }
@@ -279,4 +353,3 @@ function button3() {
 }
 
 canvasInit();
-updateTime();
