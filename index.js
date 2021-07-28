@@ -14,11 +14,13 @@ let debugDrawMode = false;
 let animateInterval;
 let selectedIcon = 0;
 let subMenuSelection = 1;
+let lightsOn;
+let rapidSnackCheck = false;
 
 document.addEventListener('keydown', buttonChoose, false);
 
 class Cloneagotchi {
-    constructor(age, sex, growthStage, species, happiness, hunger, weight, discipline, illness, careMistakes) {
+    constructor(age, sex, growthStage, species, happiness, hunger, weight, discipline, illness, waste, careMistakes) {
         this.age = age;
         this.sex = sex; //0 is male, 1 is female (only that way so the tenary operators work with true/false)
         this.growthStage = growthStage;
@@ -28,31 +30,41 @@ class Cloneagotchi {
         this.weight = weight;
         this.discipline = discipline;
         this.illness = illness;
+        this.waste = waste;
         this.careMistakes = careMistakes;
     }
     async mainAnimate() {
         let randNum = 0//Math.round(Math.random()*3); There will be three different idle animations for the main screen
-        switch (this.growthStage) {
-            case "infant":
-            default:
-                if (gameState == "main") {
+        let appendedAnimation = undefined;
+        if (this.illness == 1) {
+            const { illnessPreset } = await import('./pixelData.js');
+            appendedAnimation = illnessPreset;
+        }
+        if (lightsOn) {
+            switch (this.growthStage) {
+                case "infant":
+                default:
                     if (randNum == 0) {
                         const { mInfantMain0 } = await import('./pixelData.js');
                         const { fInfantMain0 } = await import('./pixelData.js');
-                        this.sex ? playAnimation(fInfantMain0, 750, true):playAnimation(mInfantMain0, 750, true);
+                        this.sex ? playAnimation(fInfantMain0, 750, true, appendedAnimation):playAnimation(mInfantMain0, 750, true, appendedAnimation);
                     }
                     else if (randNum == 1) {
                         const { mInfantMain1 } = await import('./pixelData.js');
                         const { fInfantMain1 } = await import('./pixelData.js');
-                        this.sex ? playAnimation(fInfantMain1, 750, true):playAnimation(mInfantMain1, 750, true);
+                        this.sex ? playAnimation(fInfantMain1, 750, true, appendedAnimation):playAnimation(mInfantMain1, 750, true, appendedAnimation);
                     }
                     else if (randNum == 2) {
                         const { mInfantMain2 } = await import('./pixelData.js');
                         const { fInfantMain2 } = await import('./pixelData.js');
-                        this.sex ? playAnimation(fInfantMain2, 750, true):playAnimation(mInfantMain2, 750, true);
+                        this.sex ? playAnimation(fInfantMain2, 750, true, appendedAnimation):playAnimation(mInfantMain2, 750, true, appendedAnimation);
                     }
-                }
-                break;
+                    break;
+            }
+        }
+        else {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0,0,500,500);
         }
     }
 
@@ -63,9 +75,11 @@ class Cloneagotchi {
 
     checkCare() {
         if (this.happiness == 0) {
+            this.cry();
             this.careMistakes++;
         }
         if (this.hunger == 0) {
+            this.cry();
             this.careMistakes++;
         }
         //Add more checks, such as if owner let the cloneagotchi be sick for too long without medicine, or if owner left the lights on at night etc
@@ -91,19 +105,44 @@ class Cloneagotchi {
     }
 
     feed(food) {
+        let snackCheckTimeout;
         if (food == "meal") {
             if (this.hunger < 4) {
-                this.hunger++
+                this.hunger++;
             }
-            this.weight++
+            this.weight++;
         }
         else if (food == "snack") {
             if (this.happiness < 4) {
-                this.happiness++
+                this.happiness++;
             }
             this.weight+=2;
-            //Add a way to check how many snacks eaten, if too many in a short period of time make the cloneagotchi sick
+            if (rapidSnackCheck) {
+                this.illness = 1;
+                //this.careMistakes++;
+                clearTimeout(snackCheckTimeout);
+            }
+            rapidSnackCheck = true;
+            snackCheckTimeout = setTimeout(() => {
+                rapidSnackCheck = false;
+            }, 10000);
         }
+    }
+
+    cry() {
+        const mainIcons = document.getElementsByClassName("menu");
+        mainIcons[7].classList.remove("grayedOut");
+        playSound('beep4');
+        setTimeout(() => {
+            mainIcons[7].classList.add("grayedOut");
+        }, 250);
+        setTimeout(() => {
+            playSound('beep4');
+            mainIcons[7].classList.remove("grayedOut");
+            setTimeout(() => {
+                mainIcons[7].classList.add("grayedOut");
+            }, 250);
+        }, 500);
     }
 }
 
@@ -136,11 +175,11 @@ async function stateHandler(state) {
                 let sexSelector = Math.round(Math.random());
                 playSound("panicNoti");
                 if(sexSelector == 0) {
-                    cloneagotchi = new Cloneagotchi(0, 0, "infant", "na", 4, 4, 5, 0, 0, 0);
+                    cloneagotchi = new Cloneagotchi(0, 0, "infant", "na", 4, 4, 5, 0, 0, 0, 0);
                     playAnimation(eggHatchingMale, 750);
                 }
                 else {
-                    cloneagotchi = new Cloneagotchi(0, 1, "infant", "na", 4, 4, 5, 0, 0, 0);
+                    cloneagotchi = new Cloneagotchi(0, 1, "infant", "na", 4, 4, 5, 0, 0, 0, 0);
                     playAnimation(eggHatchingFemale, 750);
                 }
             }, 10000);
@@ -166,13 +205,14 @@ async function stateHandler(state) {
             canvasClear();
             const { menuSelectPreset1 } = await import('./pixelData.js');
             drawPreset(menuSelectPreset1);
+            subMenuSelection = 1;
             ctx.fillStyle = 'black';
             ctx.font = '50px Lucida Console';
             ctx.fillText('Meal', 50, 75);
             ctx.fillText('Snack', 50, 125);
             break;
         case "lightSwitch":
-            console.log("You hit the lights");
+            lightsOn = !lightsOn;
             stateHandler("main");
             break;
         case "gameMenu":
@@ -180,11 +220,23 @@ async function stateHandler(state) {
             stateHandler("main");
             break;
         case "medicine":
-            console.log("You tried to give your cloneagotchi a shot");
+            if (cloneagotchi.illness == 1) {
+                playSound('regularNoti');
+                cloneagotchi.illness = 0;
+            }
+            else {
+                playSound('beep3');
+            }
             stateHandler("main");
             break;
         case "plunger":
-            console.log("You tried to plunge");
+            if (cloneagotchi.waste > 0) {
+                playSound('regularNoti');
+                cloneagotchi.waste = 0;
+            }
+            else {
+                playSound('beep3');
+            }
             stateHandler("main");
             break;
         case "statMenu":
@@ -205,14 +257,16 @@ async function stateHandler(state) {
 function saveGame() {
     localStorage.setItem('cloneagotchiData', JSON.stringify(cloneagotchi));
     localStorage.setItem('previousSeconds', JSON.stringify(currentSeconds));
+    localStorage.setItem('lightsOn', JSON.stringify(lightsOn));
 }
 
 function loadGame() {
     const cloneagotchiData = JSON.parse(localStorage.getItem('cloneagotchiData'));
-    cloneagotchi = new Cloneagotchi(cloneagotchiData.age, cloneagotchiData.sex, cloneagotchiData.growthStage, cloneagotchiData.species, cloneagotchiData.happiness, cloneagotchiData.hunger, cloneagotchiData.weight, cloneagotchiData.discipline, cloneagotchiData.illness, cloneagotchiData.careMistakes);
+    cloneagotchi = new Cloneagotchi(cloneagotchiData.age, cloneagotchiData.sex, cloneagotchiData.growthStage, cloneagotchiData.species, cloneagotchiData.happiness, cloneagotchiData.hunger, cloneagotchiData.weight, cloneagotchiData.discipline, cloneagotchiData.illness, cloneagotchiData.waste, cloneagotchiData.careMistakes);
     startSeconds = parseInt(localStorage.getItem('startSeconds'));
     const previousSeconds = parseInt(localStorage.getItem('previousSeconds'));
     timeDifference = currentSeconds - previousSeconds;
+    lightsOn = JSON.parse(localStorage.getItem('lightsOn'));
     cloneagotchi.timeAwayChange();
 }
 
@@ -255,20 +309,28 @@ function canvasClear() {
     shadedPixelsNums = [];
 }
 
-function drawPreset(imported) {
-    canvasClear();
+function drawPreset(imported, clear=true) {
+    if (clear){
+        canvasClear();
+    }
     for (i=0;i<imported.length;i++) {
         canvasDraw(imported[i]);
     }
 }
 
-function playAnimation(frames, speed, loop=false) {
+function playAnimation(frames, speed, loop=false, appendedFrame) {
     let framePixels = frames[0]
     let f = 0;
     animateInterval = setInterval(() => {
         canvasClear();
         for (i=0;i<framePixels.length;i++) {
             canvasDraw(framePixels[i]);
+        }
+        if (appendedFrame != undefined) {
+            let appendedPixels = appendedFrame[0];
+            for (i=0;i<appendedPixels.length;i++) {
+                canvasDraw(appendedPixels[i]);
+            }
         }
         f++;
         framePixels = frames[f]
@@ -470,11 +532,9 @@ function button2() {
                         stateHandler("gameMenu");
                         break;
                     case 3:
-                        playSound("beep1");
                         stateHandler("medicine");
                         break;
                     case 4:
-                        playSound("beep1");
                         stateHandler("plunger");
                         break;
                     case 5:
