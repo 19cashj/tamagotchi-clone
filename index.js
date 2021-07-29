@@ -119,7 +119,7 @@ class Cloneagotchi {
             this.cry();
             this.careMistakes++;
         }
-        //Add more checks, such as if owner let the cloneagotchi be sick for too long without medicine, or if owner left the lights on at night etc
+        //Add more checks, if owner left the lights on at night etc
     }
 
     scriptedStatChange() {
