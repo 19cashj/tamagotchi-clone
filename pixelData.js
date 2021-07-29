@@ -75,6 +75,12 @@ export const menuSelectPreset2 = [[312]];
 export const illnessPreset = [[177,145,147,239,238,240,206,174,143,112,210,180,
 149,118,85,83,84,86,82,175,179,300,332,302,364,362]];
 
+export const waste1 = [[565,566,567,535]];
+
+export const waste2 = [[565,566,567,535,533,532,531,501]];
+
+export const waste3 = [[565,566,567,535,533,532,531,501,497,498,499,467]];
+
 /*Animations to be done:
     Eating
     Sickness

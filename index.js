@@ -14,13 +14,16 @@ let debugDrawMode = false;
 let animateInterval;
 let selectedIcon = 0;
 let subMenuSelection = 1;
-let lightsOn;
+let lightsOn = true;
 let rapidSnackCheck = false;
+let statLock = false;
+let foodClock;
+let happinessClock;
 
 document.addEventListener('keydown', buttonChoose, false);
 
 class Cloneagotchi {
-    constructor(age, sex, growthStage, species, happiness, hunger, weight, discipline, illness, waste, careMistakes) {
+    constructor(age, sex, growthStage, species, happiness, hunger, weight, discipline, illness, waste, naughty, careMistakes) {
         this.age = age;
         this.sex = sex; //0 is male, 1 is female (only that way so the tenary operators work with true/false)
         this.growthStage = growthStage;
@@ -31,14 +34,31 @@ class Cloneagotchi {
         this.discipline = discipline;
         this.illness = illness;
         this.waste = waste;
+        this.naughty = naughty;
         this.careMistakes = careMistakes;
     }
     async mainAnimate() {
         let randNum = 0//Math.round(Math.random()*3); There will be three different idle animations for the main screen
-        let appendedAnimation = undefined;
+        let appendedAnimation = [];
         if (this.illness == 1) {
             const { illnessPreset } = await import('./pixelData.js');
-            appendedAnimation = illnessPreset;
+            appendedAnimation.push(illnessPreset);
+        } //change this system so multiple appends can work (illness and waste)
+        if (this.waste > 0) {
+            switch(this.waste){
+                case 1:
+                    const { waste1 } = await import('./pixelData.js');
+                    appendedAnimation.push(waste1);
+                    break;
+                case 2:
+                    const { waste2 } = await import('./pixelData.js');
+                    appendedAnimation.push(waste2);
+                    break;
+                case 3:
+                    const { waste3 } = await import('./pixelData.js');
+                    appendedAnimation.push(waste3);
+                    break;
+            }
         }
         if (lightsOn) {
             switch (this.growthStage) {
@@ -70,6 +90,14 @@ class Cloneagotchi {
 
     timeAwayChange() { //Method to change certain stats depending on how long the user was away
         console.log(timeDifference);
+        let timeAwayExecutions = Math.floor(timeDifference / 360);
+        if (timeAwayExecutions >= 1) {
+            for (i=0;i<timeAwayExecutions;i++) {
+                this.randomStatChange(true);
+            }
+        }
+        this.guaranteedStatChange(true);
+        this.checkCare();
         timeDifference = 0;
     }
 
@@ -82,14 +110,194 @@ class Cloneagotchi {
             this.cry();
             this.careMistakes++;
         }
+        if (this.waste > 2) {
+            this.cry();
+            this.careMistakes++;
+        }
+        if (this.illness == 2) {
+            this.cry();
+            this.careMistakes++;
+        }
         //Add more checks, such as if owner let the cloneagotchi be sick for too long without medicine, or if owner left the lights on at night etc
     }
 
-    randomStatChange() {
+    scriptedStatChange() {
+        let gameSecondsTotal = currentSeconds - startSeconds;
+            if (gameSecondsTotal >= 86400 && gameSecondsTotal <= 172800) {
+                if (cloneagotchi.growthStage == "infant") {
+                    playSound('birth');
+                    cloneagotchi.growthStage = "toddler";
+                }
+            }
+        //Stat changes that will happen no matter what (growthStage changes, predefined events etc)
+    }
+
+    guaranteedStatChange(timeAway=false) {
+        if (timeAway == false) {
+            switch(cloneagotchi.growthStage) {
+                default:
+                    if (foodClock == 240) {
+                        foodClock = 0;
+                        if (cloneagotchi.hunger > 0) {
+                            cloneagotchi.hunger -= 1
+                        }
+                    }
+                    if (happinessClock == 240) {
+                        happinessClock = 0;
+                        if (cloneagotchi.happiness > 0) {
+                            cloneagotchi.hunger -= 1
+                        }
+                    }
+                break;
+                case "infant":
+                    if (foodClock == 120) {
+                        foodClock = 0;
+                        if (cloneagotchi.hunger > 0) {
+                            cloneagotchi.hunger --
+                        }
+                        if (cloneagotchi.hunger == 1) {
+                            this.cry();
+                        }
+                    }
+                    if (happinessClock == 120) {
+                        happinessClock = 0;
+                        if (cloneagotchi.happiness > 0) {
+                            cloneagotchi.happiness --
+                        }
+                        if (cloneagotchi.happiness == 1) {
+                            this.cry();
+                        }
+                    }
+                break;
+            }
+        }
+
+        else if (timeAway == true) {
+        let difference;
+            switch(cloneagotchi.growthStage) {
+                default:
+                    difference = timeDifference / 43200;
+                    break;
+                case "infant":
+                    difference = timeDifference / 21600;
+                    break;
+            }
+            if (difference >= 1) {
+                foodClock = 0;
+                happinessClock = 0;
+                if (cloneagotchi.hunger > 0) {
+                    cloneagotchi.hunger - Math.floor(difference);
+                }
+
+                if (cloneagotchi.happiness > 0) {
+                    cloneagotchi.happiness - Math.floor(difference);
+                }
+            }
+        }
+    }
+
+    randomStatChange(timeAway=false) {
+        //statLock (global variable) will lock stat changes to prevent spam (even though it would be rare to get the same event back to back quickly)
+        let randNum;
+        let illnessCeil = [35,40];
+        let wasteCeil = [45,50];
+        switch(cloneagotchi.growthStage) {
+            case "infant":
+                randNum = Math.round(Math.random() *5000);
+                illnessCeil[1] = 100;
+                wasteCeil[0] = 105;
+                wasteCeil[1] = 155;
+            default:
+                randNum = Math.round(Math.random() *10000);
+                break;
+        }
+        if (statLock == false) {
+            if (timeAway == false) {
+                if (randNum > 0 && randNum < (10 -= cloneagotchi.discipline)) { //Random naughty event, for chance to increase discipline (user has 10 seconds to discipline after a fake cry)
+                    cloneagotchi.naughty = true
+                    this.cry();
+                    statLock = true;
+                    setTimeout(() => {
+                        statLock = false;
+                        cloneagotchi.naughty = false;
+                    }, 10000);
+                }
+            }
+            if (randNum > 10 && randNum < 15) {
+                if (cloneagotchi.hunger > 0) {
+                    cloneagotchi.hunger--;
+                }
+                if (timeAway == false) {
+                    statLock = true;
+                    setTimeout(() => {
+                        statLock = false;
+                    }, 10000);
+                    if (cloneagotchi.hunger == 1) {
+                        this.cry();
+                    }
+                    this.checkCare();
+                }
+            }
+            if (randNum > 25 && randNum < 30) {
+                if (cloneagotchi.happiness > 0) {
+                    cloneagotchi.happiness--;
+                }
+                if (timeAway == false) {
+                    statLock = true;
+                    setTimeout(() => {
+                        statLock = false;
+                    }, 10000);
+                    if (cloneagotchi.happiness == 1) {
+                        this.cry();
+                    }
+                }
+                this.checkCare();
+            }
+            if (randNum > illnessCeil[0] && randNum < illnessCeil[1]) {
+                if (timeAway = true) {
+                    cloneagotchi.illness = 1;
+                }
+                if (timeAway == false) {
+                    cloneagotchi.illness++;
+                    if (gameState = "main") {
+                        clearInterval(animateInterval);
+                        canvasClear();
+                        this.mainAnimate();
+                    }
+                    statLock = true;
+                    setTimeout(() => {
+                        statLock = false;
+                    }, 10000);
+                    this.checkCare();
+                }
+            }
+            if (randNum > wasteCeil[0] && randNum < wasteCeil[1]) {
+                if (cloneagotchi.waste < 4) {
+                    cloneagotchi.waste++;
+                }
+                if (timeAway == false) {
+                    if (gameState = "main") {
+                        clearInterval(animateInterval);
+                        canvasClear();
+                        this.mainAnimate();
+                    }
+                    if (cloneagotchi.waste == 2) {
+                        this.cry();
+                    }
+                    statLock = true;
+                    setTimeout(() => {
+                        statLock = false;
+                    }, 10000);
+                    this.checkCare();
+                }
+            }
+        }
+        //Add a check for lights on at night, give user 30 seconds to turn off the lights or they get a care mistake
         //Method to randomly make the cloneagotchi sick, change happiness etc. Should change the rate for bad things depending on growth stage (Younger = more bad things)
     }
 
     exercised(won) {
+        happinessClock = 0;
         let randNum = Math.round(Math.random()*4);
         if(this.weight > 5) {
             this.weight--;
@@ -111,12 +319,14 @@ class Cloneagotchi {
                 this.hunger++;
             }
             this.weight++;
+            foodClock = 0;
         }
         else if (food == "snack") {
             if (this.happiness < 4) {
                 this.happiness++;
             }
             this.weight+=2;
+            happinessClock = 0;
             if (rapidSnackCheck) {
                 this.illness = 1;
                 //this.careMistakes++;
@@ -127,6 +337,91 @@ class Cloneagotchi {
                 rapidSnackCheck = false;
             }, 10000);
         }
+    }
+
+    moodCheck() {
+        let moodScore = 4;
+        let mood;
+        switch (this.happiness) {
+            case 0:
+                moodScore -= 4;
+                break;
+            case 1:
+                moodScore -= 3;
+                break;
+            case 2:
+                moodScore -= 2;
+                break;
+            case 3:
+                break;
+            case 4:
+                moodScore += 1;
+                break;
+        }
+        switch (this.hunger) {
+            case 0:
+                moodScore -= 2;
+                break;
+            case 1:
+                moodScore -= 1;
+                break;
+            case 2:
+            case 3:
+            case 4:
+                break;
+        }
+        switch (this.illness) {
+            case 0:
+                break;
+            case 1:
+                moodScore -= 1;
+                break;
+        }
+        switch (this.waste) {
+            case 0:
+                break;
+            case 1:
+                moodScore -= 1;
+                break;
+            case 2:
+            case 3:
+                moodScore -= 2;
+                break;
+        }
+        switch(moodScore) {
+            case -6:
+            case -5:
+            case -4:
+                mood = "scared";
+                break;
+            case -3:
+            case -2:
+                mood = "sad";
+                break;
+            case -1:
+                mood = "angry";
+                break;
+            case 0:
+                mood = "terrible";
+                break;
+            case 1:
+                mood = "bad";
+                break;
+            case 2:
+                mood = "average";
+                break;
+            case 3:
+                mood = "good";
+                break;
+            case 4:
+                mood = "great";
+                break;
+            case 5:
+            case 6:
+                mood = "fantastic";
+                break;
+        }
+        return mood;
     }
 
     cry() {
@@ -148,6 +443,7 @@ class Cloneagotchi {
 
 async function stateHandler(state) {
     gameState = state;
+    const { menuSelectPreset1 } = await import('./pixelData.js');
     switch (state) {
         case "title":
             playSound("start");
@@ -159,7 +455,7 @@ async function stateHandler(state) {
                     stateHandler("beginning");
                   }
                 else {
-                    loadGame(); //loading not finished yet
+                    loadGame();
                     stateHandler("main");
                 }
             }, 3150);
@@ -175,11 +471,11 @@ async function stateHandler(state) {
                 let sexSelector = Math.round(Math.random());
                 playSound("panicNoti");
                 if(sexSelector == 0) {
-                    cloneagotchi = new Cloneagotchi(0, 0, "infant", "na", 4, 4, 5, 0, 0, 0, 0);
+                    cloneagotchi = new Cloneagotchi(0, 0, "infant", "na", 4, 4, 5, 0, 0, 0, false, 0);
                     playAnimation(eggHatchingMale, 750);
                 }
                 else {
-                    cloneagotchi = new Cloneagotchi(0, 1, "infant", "na", 4, 4, 5, 0, 0, 0, 0);
+                    cloneagotchi = new Cloneagotchi(0, 1, "infant", "na", 4, 4, 5, 0, 0, 0, false, 0);
                     playAnimation(eggHatchingFemale, 750);
                 }
             }, 10000);
@@ -203,7 +499,6 @@ async function stateHandler(state) {
         case "foodMenu":
             clearInterval(animateInterval);
             canvasClear();
-            const { menuSelectPreset1 } = await import('./pixelData.js');
             drawPreset(menuSelectPreset1);
             subMenuSelection = 1;
             ctx.fillStyle = 'black';
@@ -216,8 +511,14 @@ async function stateHandler(state) {
             stateHandler("main");
             break;
         case "gameMenu":
-            console.log("Game Menu goes here");
-            stateHandler("main");
+            clearInterval(animateInterval);
+            canvasClear();
+            drawPreset(menuSelectPreset1);
+            subMenuSelection = 1;
+            ctx.fillStyle = 'black';
+            ctx.font = '25px Lucida Console';
+            ctx.fillText('Left/Right', 50, 75);
+            ctx.fillText('Higher/Lower', 50, 125);
             break;
         case "medicine":
             if (cloneagotchi.illness == 1) {
@@ -240,16 +541,36 @@ async function stateHandler(state) {
             stateHandler("main");
             break;
         case "statMenu":
-            console.log("Stat Menu goes here");
-            stateHandler("main");
+            clearInterval(animateInterval);
+            canvasClear();
+            subMenuSelection = 1;
+            ctx.fillStyle = 'black';
+            ctx.font = '25px Lucida Console';
+            ctx.fillText(`Hunger: ${cloneagotchi.hunger}`, 50, 75);
+            ctx.fillText(`Happiness: ${cloneagotchi.happiness}`, 50, 125);
             break;
         case "discipline":
-            console.log("You tried to discipline your cloneagotchi");
+            if (cloneagotchi.naughty) {
+                cloneagotchi.discipline++;
+                cloneagotchi.naughty = false;
+                playSound("regularNoti");
+            }
+            else if(cloneagotchi.naughty == false) {
+                if (cloneagotchi.happiness > 0) {
+                    cloneagotchi.happiness --;
+                    cloneagotchi.checkCare();
+                }
+                playSound("badNoti2");
+            }
             stateHandler("main");
             break;
         case "moodMenu":
-            console.log("Mood Menu goes here");
-            stateHandler("main");
+            clearInterval(animateInterval);
+            canvasClear();
+            ctx.fillStyle = 'black';
+            ctx.font = '25px Lucida Console';
+            ctx.fillText('Your cloneagotchi', 25, 75);
+            ctx.fillText(`feels ${cloneagotchi.moodCheck()}`, 50, 125);
             break;
     }
 }
@@ -257,16 +578,19 @@ async function stateHandler(state) {
 function saveGame() {
     localStorage.setItem('cloneagotchiData', JSON.stringify(cloneagotchi));
     localStorage.setItem('previousSeconds', JSON.stringify(currentSeconds));
-    localStorage.setItem('lightsOn', JSON.stringify(lightsOn));
+    localStorage.setItem('foodClock', JSON.stringify(foodClock));
+    localStorage.setItem('happinessClock', JSON.stringify(happinessClock));
 }
 
 function loadGame() {
     const cloneagotchiData = JSON.parse(localStorage.getItem('cloneagotchiData'));
-    cloneagotchi = new Cloneagotchi(cloneagotchiData.age, cloneagotchiData.sex, cloneagotchiData.growthStage, cloneagotchiData.species, cloneagotchiData.happiness, cloneagotchiData.hunger, cloneagotchiData.weight, cloneagotchiData.discipline, cloneagotchiData.illness, cloneagotchiData.waste, cloneagotchiData.careMistakes);
+    cloneagotchi = new Cloneagotchi(cloneagotchiData.age, cloneagotchiData.sex, cloneagotchiData.growthStage, cloneagotchiData.species, cloneagotchiData.happiness, cloneagotchiData.hunger, cloneagotchiData.weight, cloneagotchiData.discipline, cloneagotchiData.illness, cloneagotchiData.waste, cloneagotchiData.naughty, cloneagotchiData.careMistakes);
     startSeconds = parseInt(localStorage.getItem('startSeconds'));
     const previousSeconds = parseInt(localStorage.getItem('previousSeconds'));
     timeDifference = currentSeconds - previousSeconds;
     lightsOn = JSON.parse(localStorage.getItem('lightsOn'));
+    foodClock = JSON.parse(localStorage.getItem('foodClock'));
+    happinessClock = JSON.parse(localStorage.getItem('happinessClock'));
     cloneagotchi.timeAwayChange();
 }
 
@@ -274,7 +598,14 @@ function updateTime() {
     setInterval(() => {
         let currentTime = new Date();
         currentSeconds = Math.round(currentTime.getTime()/1000);
+        foodClock++;
+        happinessClock++;
         document.getElementById("headTimer").textContent = currentSeconds;
+        if (cloneagotchi != null) {
+            cloneagotchi.randomStatChange();
+            cloneagotchi.guaranteedStatChange();
+            cloneagotchi.scriptedStatChange();
+        }
     }, 1000);
 }
 
@@ -327,9 +658,11 @@ function playAnimation(frames, speed, loop=false, appendedFrame) {
             canvasDraw(framePixels[i]);
         }
         if (appendedFrame != undefined) {
-            let appendedPixels = appendedFrame[0];
-            for (i=0;i<appendedPixels.length;i++) {
-                canvasDraw(appendedPixels[i]);
+            for (j=0;j<appendedFrame.length;j++) {
+            let appendedPixels = appendedFrame[j];
+                for (i=0;i<appendedPixels[0].length;i++) {
+                    canvasDraw(appendedPixels[0][i]);
+                }
             }
         }
         f++;
@@ -410,6 +743,12 @@ function eraseDataDebug() {
     localStorage.clear();
 }
 
+function debugStatShow() {
+    savedStats = JSON.stringify(localStorage.getItem('cloneagotchiData'));
+    statsp = document.getElementById("stats");
+    statsp.textContent = savedStats;
+}
+
 function buttonChoose(e) {
     let keyPressed = e.key;
     switch (keyPressed) {
@@ -472,6 +811,8 @@ async function button1() {
     let state = gameState;
     const button = document.getElementById("button1")
     button.classList.add("buttonActive");
+    const { menuSelectPreset1 } = await import('./pixelData.js');
+    const { menuSelectPreset2 } = await import('./pixelData.js');
     setTimeout(() => {
         button.classList.remove("buttonActive");
     }, 100);
@@ -481,8 +822,6 @@ async function button1() {
             break;
         case "foodMenu":
             playSound("beep2");
-            const { menuSelectPreset1 } = await import('./pixelData.js');
-            const { menuSelectPreset2 } = await import('./pixelData.js');
             subMenuSelection++
             if (subMenuSelection < 3) {
                 if (subMenuSelection == 1) {
@@ -500,6 +839,59 @@ async function button1() {
             ctx.font = '50px Lucida Console';
             ctx.fillText('Meal', 50, 75);
             ctx.fillText('Snack', 50, 125);
+            break;
+        case "gameMenu":
+            playSound("beep2");
+            subMenuSelection++
+            if (subMenuSelection < 3) {
+                if (subMenuSelection == 1) {
+                    drawPreset(menuSelectPreset1);
+                }
+                else if (subMenuSelection == 2) {
+                    drawPreset(menuSelectPreset2);
+                }
+            }
+            else {
+                subMenuSelection = 1;
+                drawPreset(menuSelectPreset1);
+            }
+            ctx.fillStyle = 'black';
+            ctx.font = '25px Lucida Console';
+            ctx.fillText('Left/Right', 50, 75);
+            ctx.fillText('Higher/Lower', 50, 125);
+            break;
+        case "statMenu":
+            playSound("beep2");
+            subMenuSelection++
+            if (subMenuSelection < 3) {
+                if (subMenuSelection == 1) {
+                    canvasClear();
+                    ctx.fillStyle = 'black';
+                    ctx.font = '25px Lucida Console';
+                    ctx.fillText(`Hunger: ${cloneagotchi.hunger}`, 50, 75);
+                    ctx.fillText(`Happiness: ${cloneagotchi.happiness}`, 50, 125);
+                }
+                else if (subMenuSelection == 2) {
+                    canvasClear();
+                    ctx.fillStyle = 'black';
+                    ctx.font = '25px Lucida Console';
+                    ctx.fillText(`Weight: ${cloneagotchi.weight} lbs`, 50, 75);
+                    ctx.fillText(`Discipline: ${cloneagotchi.discipline}`, 50, 125);
+                }
+            }
+            else {
+                subMenuSelection = 1;
+                canvasClear();
+                ctx.fillStyle = 'black';
+                ctx.font = '25px Lucida Console';
+                ctx.fillText(`Hunger: ${cloneagotchi.hunger}`, 50, 75);
+                ctx.fillText(`Happiness: ${cloneagotchi.happiness}`, 50, 125);
+            }
+            break;
+        case "moodMenu":
+            subMenuSelection = 0;
+            playSound("beep3");
+            stateHandler("main");
             break;
         default:
             break;
@@ -542,7 +934,6 @@ function button2() {
                         stateHandler("statMenu");
                         break;
                     case 6:
-                        playSound("beep1");
                         stateHandler("discipline");
                         break;
                     case 7:
@@ -550,7 +941,7 @@ function button2() {
                         stateHandler("moodMenu");
                         break;
                 }
-            break; //This one line of code fixed the most annoying problem with the submenu
+            break;
             case "foodMenu":
                 if(subMenuSelection == 1) { //Give a meal
                     playSound("beep1");
@@ -566,6 +957,26 @@ function button2() {
                     subMenuSelection = 1;
                     stateHandler("main");
                 }
+                break;
+            case "gameMenu": //TO BE DONE
+                if(subMenuSelection == 1) {
+                    playSound("beep1");
+                    subMenuSelection = 1;
+
+                    //stateHandler("main");
+                }
+                else if (subMenuSelection == 2) {
+                    playSound("beep1");
+                    subMenuSelection = 1;
+
+                    //stateHandler("main");
+                }
+                break;
+            case "statMenu":
+            case "moodMenu":
+                subMenuSelection = 0;
+                playSound("beep3");
+                stateHandler("main");
                 break;
             default:
                 break;
@@ -584,6 +995,9 @@ function button3() {
         default:
             break;
         case "foodMenu":
+        case "gameMenu":
+        case "statMenu":
+        case "moodMenu":
             subMenuSelection = 0;
             playSound("beep3");
             stateHandler("main");
