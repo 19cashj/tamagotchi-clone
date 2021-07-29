@@ -19,6 +19,7 @@ let rapidSnackCheck = false;
 let statLock = false;
 let foodClock;
 let happinessClock;
+let foodWasteInc = 0;
 
 document.addEventListener('keydown', buttonChoose, false);
 
@@ -127,6 +128,7 @@ class Cloneagotchi {
                 if (cloneagotchi.growthStage == "infant") {
                     playSound('birth');
                     cloneagotchi.growthStage = "toddler";
+                    cloneagotchi.age = 1;
                 }
             }
         //Stat changes that will happen no matter what (growthStage changes, predefined events etc)
@@ -213,25 +215,28 @@ class Cloneagotchi {
         }
         if (statLock == false) {
             if (timeAway == false) {
-                if (randNum > 0 && randNum < (10 -= cloneagotchi.discipline)) { //Random naughty event, for chance to increase discipline (user has 10 seconds to discipline after a fake cry)
+                if (randNum > 0 && randNum < 10) { //Random naughty event, for chance to increase discipline (user has 10 seconds to discipline after a fake cry)
                     cloneagotchi.naughty = true
                     this.cry();
                     statLock = true;
                     setTimeout(() => {
-                        statLock = false;
                         cloneagotchi.naughty = false;
                     }, 10000);
+                    setTimeout(() => {
+                        statLock = false;
+                    }, 30000);
                 }
             }
             if (randNum > 10 && randNum < 15) {
                 if (cloneagotchi.hunger > 0) {
                     cloneagotchi.hunger--;
+                    foodClock = 0;
                 }
                 if (timeAway == false) {
                     statLock = true;
                     setTimeout(() => {
                         statLock = false;
-                    }, 10000);
+                    }, 30000);
                     if (cloneagotchi.hunger == 1) {
                         this.cry();
                     }
@@ -241,12 +246,13 @@ class Cloneagotchi {
             if (randNum > 25 && randNum < 30) {
                 if (cloneagotchi.happiness > 0) {
                     cloneagotchi.happiness--;
+                    happinessClock = 0;
                 }
                 if (timeAway == false) {
                     statLock = true;
                     setTimeout(() => {
                         statLock = false;
-                    }, 10000);
+                    }, 30000);
                     if (cloneagotchi.happiness == 1) {
                         this.cry();
                     }
@@ -259,15 +265,13 @@ class Cloneagotchi {
                 }
                 if (timeAway == false) {
                     cloneagotchi.illness++;
-                    if (gameState = "main") {
-                        clearInterval(animateInterval);
-                        canvasClear();
-                        this.mainAnimate();
+                    if (gameState == "main") {
+                        stateHandler("main");
                     }
                     statLock = true;
                     setTimeout(() => {
                         statLock = false;
-                    }, 10000);
+                    }, 30000);
                     this.checkCare();
                 }
             }
@@ -276,7 +280,7 @@ class Cloneagotchi {
                     cloneagotchi.waste++;
                 }
                 if (timeAway == false) {
-                    if (gameState = "main") {
+                    if (gameState == "main") {
                         clearInterval(animateInterval);
                         canvasClear();
                         this.mainAnimate();
@@ -287,13 +291,12 @@ class Cloneagotchi {
                     statLock = true;
                     setTimeout(() => {
                         statLock = false;
-                    }, 10000);
+                    }, 30000);
                     this.checkCare();
                 }
             }
         }
         //Add a check for lights on at night, give user 30 seconds to turn off the lights or they get a care mistake
-        //Method to randomly make the cloneagotchi sick, change happiness etc. Should change the rate for bad things depending on growth stage (Younger = more bad things)
     }
 
     exercised(won) {
@@ -329,6 +332,9 @@ class Cloneagotchi {
             happinessClock = 0;
             if (rapidSnackCheck) {
                 this.illness = 1;
+                if (gameState == "main") {
+                    stateHandler("main");
+                }
                 //this.careMistakes++;
                 clearTimeout(snackCheckTimeout);
             }
@@ -336,6 +342,14 @@ class Cloneagotchi {
             snackCheckTimeout = setTimeout(() => {
                 rapidSnackCheck = false;
             }, 10000);
+        }
+        foodWasteInc++;
+        if (foodWasteInc == 2) {
+            cloneagotchi.waste++;
+            if (cloneagotchi.waste == 2) {
+                cloneagotchi.cry();
+            }
+            foodWasteInc = 0;
         }
     }
 
