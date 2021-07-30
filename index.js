@@ -12,6 +12,7 @@ let selectedPixel = 0;
 let prevPixel = 0;
 let debugDrawMode = false;
 let animateInterval;
+let timeInterval;
 let selectedIcon = 0;
 let subMenuSelection = 1;
 let lightsOn = true;
@@ -20,6 +21,9 @@ let statLock = false;
 let foodClock;
 let happinessClock;
 let foodWasteInc = 0;
+let gameDecision;
+let gameCount = 0;
+let gameWinCount = 0;
 
 document.addEventListener('keydown', buttonChoose, false);
 
@@ -61,7 +65,7 @@ class Cloneagotchi {
                     break;
             }
         }
-        if (lightsOn) {
+        if (lightsOn == true) {
             switch (this.growthStage) {
                 case "infant":
                 default:
@@ -86,6 +90,70 @@ class Cloneagotchi {
         else {
             ctx.fillStyle = "black";
             ctx.fillRect(0,0,500,500);
+        }
+    }
+
+    async gameAnimate(game=undefined, condition=undefined) {
+        subMenuSelection = 1;
+        const { mInfantMain0 } = await import('./pixelData.js');
+        const { fInfantMain0 } = await import('./pixelData.js');
+        if (game == undefined) { //First frame of the main animation will be drawn at the start of a game
+            if (condition == undefined) {
+                switch (this.growthStage) {
+                    case "infant":
+                    default:
+                        canvasClear();
+                        this.sex ? drawPreset(fInfantMain0[0]):drawPreset(mInfantMain0[0]);
+                }
+            }
+            /*else if (condition == "win") {
+            const { mInfantHappy } = await import('./pixelData.js')
+            const { fInfantHappy } = await import('./pixelData.js')
+                switch (this.growthStage) {
+                    case "infant":
+                    default:
+                        canvasClear();
+                        this.sex ? drawPreset(fInfantMain0[0]):drawPreset(mInfantMain0[0]);
+                }
+            }
+            else if (condition == "lose") {
+                //const { mInfantSad } = await import('./pixelData.js')
+                 //const { fInfantSad } = await import('./pixelData.js')
+                switch (this.growthStage) {
+                    case "infant":
+                    default:
+                        canvasClear();
+                        this.sex ? drawPreset(fInfantMain0[0]):drawPreset(mInfantMain0[0]);
+                }
+            } */
+        }
+
+        else if (game == "lr") {
+            switch (this.growthStage) {
+                case "infant":
+                default:
+                    canvasClear();
+                    if (condition == "right") {
+                        this.sex ? drawPreset(fInfantMain0[1]):drawPreset(mInfantMain0[1]);
+                    }
+                    else if (condition == "left") {
+                        this.sex ? drawPreset(fInfantMain0[2]):drawPreset(mInfantMain0[2]);
+                    }
+            }
+        }
+
+        else if (game == "hl") {
+            switch (this.growthStage) {
+                case "infant":
+                default:
+                    canvasClear();
+                    //if (condition == "win") {
+                        //this.sex ? drawPreset(fInfantMain0[1]):drawPreset(mInfantMain0[1]);
+                    //}
+                    //else if (condition == "lose") {
+                        //this.sex ? drawPreset(fInfantMain0[2]):drawPreset(mInfantMain0[2]);
+                    //}
+            }
         }
     }
 
@@ -266,7 +334,9 @@ class Cloneagotchi {
                 if (timeAway == false) {
                     cloneagotchi.illness++;
                     if (gameState == "main") {
-                        stateHandler("main");
+                        clearInterval(animateInterval);
+                        canvasClear();
+                        this.mainAnimate();
                     }
                     statLock = true;
                     setTimeout(() => {
@@ -455,7 +525,7 @@ class Cloneagotchi {
     }
 }
 
-async function stateHandler(state) {
+async function stateHandler(state,extraInput=undefined) {
     gameState = state;
     const { menuSelectPreset1 } = await import('./pixelData.js');
     switch (state) {
@@ -534,6 +604,100 @@ async function stateHandler(state) {
             ctx.fillText('Left/Right', 50, 75);
             ctx.fillText('Higher/Lower', 50, 125);
             break;
+        case "game-leftright": //Put the game here
+            if (extraInput == undefined) {
+                clearInterval(animateInterval);
+                canvasClear();
+                cloneagotchi.gameAnimate();
+                let randNum = Math.round(Math.random())
+                if (randNum) {
+                    gameDecision = "left";
+                }
+                else {
+                    gameDecision = "right";
+                }
+            }
+            else if (extraInput == "left" || extraInput == "right") {
+                if (gameDecision == "left") {
+                    cloneagotchi.gameAnimate("lr", "left");
+                }
+                else if (gameDecision == "right") {
+                    cloneagotchi.gameAnimate("lr", "right");
+                }
+                if (gameDecision == extraInput) {
+                    stateHandler("winScreen");
+                    setTimeout(() => {
+                        gameCount++;
+                        gameWinCount++;
+                        if (gameCount>=5) {
+                            if (gameWinCount>=3) {
+                                playSound("regularNoti");
+                                cloneagotchi.exercised(1);
+                            }
+                            else {
+                                playSound("badNoti2");
+                                cloneagotchi.exercised(0);
+                            }
+                            gameWinCount = 0;
+                            gameCount = 0;
+                            stateHandler("main")
+                        }
+                        else {
+                            stateHandler("game-leftright");
+                        }
+                    }, 1000);
+                }
+    
+                else if (gameDecision != extraInput) {
+                    stateHandler("loseScreen");
+                    setTimeout(() => {
+                        gameCount++;
+                        if (gameCount>=5) {
+                            if (gameWinCount>=3) {
+                                playSound("regularNoti");
+                                cloneagotchi.exercised(1);
+                            }
+                            else {
+                                playSound("badNoti2");
+                                cloneagotchi.exercised(0);
+                            }
+                            gameWinCount = 0;
+                            gameCount = 0;
+                            stateHandler("main")
+                        }
+                        else {
+                            stateHandler("game-leftright");
+                        }
+                    }, 1000);
+                }
+            }
+            //Utilize newly created extraInput to take actions based on user input
+            break;
+        case "game-higherlower": //Put the game here
+            if (extraInput == undefined) {
+                clearInterval(animateInterval);
+                canvasClear();
+                cloneagotchi.gameAnimate();
+                setTimeout(() => {
+                    
+                }, 1000);
+            }
+            else if (extraInput == "higher") {
+
+            }
+            else if (extraInput == "lower") {
+                
+            }
+            //Utilize newly created extraInput to take actions based on user input
+            break;
+        case "winScreen":
+            playSound("beep1");
+            //cloneagotchi.gameAnimate(undefined, "win");
+            break;
+        case "loseScreen":
+            playSound("beep3");
+            //cloneagotchi.gameAnimate(undefined, "lose");
+            break;
         case "medicine":
             if (cloneagotchi.illness == 1) {
                 playSound('regularNoti');
@@ -609,7 +773,7 @@ function loadGame() {
 }
 
 function updateTime() {
-    setInterval(() => {
+    timeInterval = setInterval(() => {
         let currentTime = new Date();
         currentSeconds = Math.round(currentTime.getTime()/1000);
         foodClock++;
@@ -874,6 +1038,12 @@ async function button1() {
             ctx.fillText('Left/Right', 50, 75);
             ctx.fillText('Higher/Lower', 50, 125);
             break;
+        case "game-leftright": //User inputs "left"
+            stateHandler("game-leftright", "left");
+            break;
+        case "game-higherlower": //User inputs "higher"
+            stateHandler("game-higherlower", "higher");
+            break;
         case "statMenu":
             playSound("beep2");
             subMenuSelection++
@@ -972,19 +1142,21 @@ function button2() {
                     stateHandler("main");
                 }
                 break;
-            case "gameMenu": //TO BE DONE
+            case "gameMenu":
                 if(subMenuSelection == 1) {
                     playSound("beep1");
-                    subMenuSelection = 1;
-
-                    //stateHandler("main");
+                    stateHandler("game-leftright");
                 }
                 else if (subMenuSelection == 2) {
                     playSound("beep1");
-                    subMenuSelection = 1;
-
-                    //stateHandler("main");
+                    stateHandler("game-higherlower");
                 }
+                break;
+            case "game-leftright": //User inputs "right"
+                stateHandler("game-leftright", "right");
+                break;
+            case "game-higherlower": //User inputs "lower"
+                stateHandler("game-higherlower", "lower");
                 break;
             case "statMenu":
             case "moodMenu":
@@ -1012,6 +1184,8 @@ function button3() {
         case "gameMenu":
         case "statMenu":
         case "moodMenu":
+        case "game-leftright":
+        case "game-higherlower":
             subMenuSelection = 0;
             playSound("beep3");
             stateHandler("main");
