@@ -1,6 +1,8 @@
 let gameState = "none";
 let cloneagotchi;
 let startSeconds;
+let currentTime = new Date();
+let currentSeconds = Math.round(currentTime.getTime()/1000);
 let timeDifference;
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
@@ -12,12 +14,12 @@ let prevPixel = 0;
 let debugDrawMode = false;
 let animateInterval;
 let timeInterval;
+let lightInterval;
 let selectedIcon = 0;
 let subMenuSelection = 1;
 let lightsOn = true;
 let rapidSnackCheck = false;
 let statLock = false;
-let lightLock = false;
 let foodClock;
 let happinessClock;
 let lightsClock = 0;
@@ -92,6 +94,7 @@ class Cloneagotchi {
         else {
             ctx.fillStyle = "black";
             ctx.fillRect(0,0,500,500);
+            clearInterval(animateInterval);
         }
     }
 
@@ -193,16 +196,22 @@ class Cloneagotchi {
             this.careMistakes++;
         }
         if (this.illness == 3) {
+            clearTimeout(foodTimeout);
             this.die();
+        }
+        if (lightsClock >= 5) {
+            lightsClock = 0;
+            playSound("badNoti2");
+            this.careMistakes++;
         }
         if (cloneagotchi.careMistakes >= 5) { //Need to find the right amount of caremistakes to result in death, needs to be fair because the user can't see caremistakes
+            clearTimeout(foodTimeout);
             this.die();
         }
-        //Add more checks, if owner left the lights on at night for too long etc
     }
 
     async die() {
-        lightsOn = true;
+        clearInterval(lightInterval);
         clearInterval(timeInterval);
         clearInterval(animateInterval);
         clearTimeout(foodTimeout);
@@ -420,6 +429,11 @@ class Cloneagotchi {
                     break;
             }
         }
+        else {
+            ctx.fillStyle = "black";
+            ctx.fillRect(0,0,500,500);
+            clearInterval(animateInterval);
+        }
         if (food == "meal") {
             if (this.hunger < 4) {
                 this.hunger++;
@@ -440,8 +454,10 @@ class Cloneagotchi {
                 }
                 playSound("badNoti2")
                 this.careMistakes++;
-                this.checkCare();
                 clearTimeout(snackCheckTimeout);
+                setTimeout(() => {
+                    this.checkCare();
+                }, 1500);
             }
             rapidSnackCheck = true;
             snackCheckTimeout = setTimeout(() => {
@@ -562,6 +578,23 @@ class Cloneagotchi {
             }, 250);
         }, 500);
     }
+
+    lightCheck() {
+        let currentTime = new Date();
+        lightInterval = setInterval(() => {
+            let currentHour = currentTime.getHours();
+            if (lightsOn == false) {
+                lightsClock = 0;
+            }
+            else {
+                lightsClock++;
+                if (currentHour <= 7 || currentHour >= 22) { //In the future, different species/growthstages will have different bedtimes.
+                        cloneagotchi.cry()
+                        this.checkCare();
+                }
+            }
+        }, 10000);
+    }
 }
 
 async function stateHandler(state,extraInput=undefined) {
@@ -582,6 +615,7 @@ async function stateHandler(state,extraInput=undefined) {
                     loadGame();
                     updateTime();
                     stateHandler("main");
+                    cloneagotchi.lightCheck();
                 }
             }, 3150);
             break;
@@ -614,6 +648,7 @@ async function stateHandler(state,extraInput=undefined) {
                 console.log(localStorage.getItem('cloneagotchiData'));
                 stateHandler("main");
                 updateTime();
+                cloneagotchi.lightCheck();
             }, 16800);
             break;
         case "main":
@@ -879,7 +914,7 @@ function saveGame() {
 }
 
 function loadGame() {
-    let currentTime = new Date();
+    currentTime = new Date();
     currentSeconds = Math.round(currentTime.getTime()/1000);
     const cloneagotchiData = JSON.parse(localStorage.getItem('cloneagotchiData'));
     cloneagotchi = new Cloneagotchi(cloneagotchiData.age, cloneagotchiData.sex, cloneagotchiData.growthStage, cloneagotchiData.species, cloneagotchiData.happiness, cloneagotchiData.hunger, cloneagotchiData.weight, cloneagotchiData.discipline, cloneagotchiData.illness, cloneagotchiData.waste, cloneagotchiData.naughty, cloneagotchiData.careMistakes);
@@ -894,7 +929,7 @@ function loadGame() {
 
 function updateTime() {
     timeInterval = setInterval(() => {
-        let currentTime = new Date();
+        currentTime = new Date();
         let currentHour = currentTime.getHours();
         currentSeconds = Math.round(currentTime.getTime()/1000);
         foodClock++;
@@ -904,24 +939,6 @@ function updateTime() {
             cloneagotchi.randomStatChange();
             cloneagotchi.guaranteedStatChange();
             cloneagotchi.scriptedStatChange();
-            if (lightsOn == false) {
-                lightsClock = 0;
-            }
-            else if (lightLock == false) {
-                lightsClock++;
-                if (currentHour <= 7 || currentHour >= 22) { //In the future, different species/growthstages will have different bedtimes. Get this to work without calling it every second
-                    lightLock = true;
-                    cloneagotchi.cry()
-                    setTimeout(() => {
-                        lightLock = false;
-                    }, 5000);
-                    if (lightsClock >= 5) {
-                        lightsClock = 0;
-                        playSound("badNoti2");
-                        cloneagotchi.careMistakes++;
-                    }
-                }
-            }
         }
     }, 1000);
 }
