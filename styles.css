@@ -3,8 +3,54 @@
     padding: 0;
 }
 
+.closed {
+    transform: translateY(-110%);
+    animation-fill-mode: forwards;
+}
+
+.rollout {
+    animation: rollOut 1s;
+    animation-fill-mode: forwards;
+}
+
+#rolloutUI {
+    position: absolute;
+    background-color: rgb(172, 228, 191);
+    border: 3px solid black;
+    width: 500px;
+    height: 500px;
+    z-index: 1;
+    border-bottom-left-radius: 25px;
+    border-bottom-right-radius: 25px;
+    display: flex;
+    flex-direction: column;
+}
+
+#rolloutTab {
+    border-top: 5px solid black;
+    border-bottom: 5px solid black;
+    padding: 2px;
+    margin-bottom: 10px;
+    margin-top: auto;
+}
+
+#rolloutContainer {
+    display: flex;
+    justify-content: center;
+    padding: 25px;
+}
+
+@keyframes rollOut {
+	0% {
+		transform: translateY(-100%);
+	}
+	100% {
+		transform: translateY(-5%);
+	}
+}
+
 body {
-    background: linear-gradient(90deg, rgb(0, 0, 0) 17%, rgb(12, 9, 66) 100%);
+    background: linear-gradient(90deg, black 0%, white 100%);
     background-size: 200% 200%;
     animation: gradient 15s ease infinite;
 }
@@ -26,11 +72,8 @@ body {
     text-align: center;
 }
 
-#stats {
-    color: white;
-}
-
 #mainContainer {
+    z-index: 0;
     width: 100%;
     height: 100%;
 }
@@ -41,32 +84,28 @@ body {
     width: 450px;
     border-radius: 80%;
     margin: 50px auto;
-    border: 3px solid rgb(90, 6, 6);
+    border: 3px solid rgb(0, 0, 0);
     align-self: center;
+}
+
+#screenContainer {
+    display: flex;
+    flex-direction: column;
+    margin-top: 110px;
+    margin-left: 70px;
 }
 
 .iconSection {
     width: 306px;
     height: 50px;
     background-color: yellow;
-    position: absolute;
-}
-
-#topSection {
-    margin-top: 110px;
-    margin-left: 70px;
 }
 
 canvas {
     border: 3px solid yellow;
-    position: absolute;
-    margin: 160px 70px;
+    height: 200px;
+    width: 300px;
     background-color: rgb(172, 228, 191);
-}
-
-#bottomSection {
-    margin-top: 366px;
-    margin-left: 70px;
 }
 
 .menu {
@@ -85,37 +124,20 @@ canvas {
     height: 35px;
     border-radius: 100%;
     position: absolute;
-    margin-top: 450px;
     cursor: pointer;
+    margin-top: 30px;
+    margin-left: 40px;
 }
 
 .buttonActive {
     background-color: rgb(100, 100, 7);
 }
 
-#button1 {
-    margin-left: 105px;
-}
-
 #button2 {
-    margin-left: 205px;
-    margin-top: 475px;
+    margin-left: 135px;
+    margin-top: 50px;
 }
 
 #button3 {
-    margin-left: 305px;
-}
-
-#communicator {
-    background-color: rgb(172, 228, 191);
-    border: 5px solid black;
-    width: 250px;
-    height: 250px;
-    border-radius: 1%;
-    font-family: monospace, Georgia, 'Times New Roman', Times, serif;
-    font-size: 25px;
-    padding: 25px;
-    margin: 20px auto;
-    /* */
-    display: none;
+    margin-left: 230px;
 }

@@ -7,6 +7,7 @@ let currentHour = currentTime.getHours();
 let timeDifference;
 const canvas = document.getElementById("screen");
 const ctx = canvas.getContext("2d");
+const rolloutUI = document.getElementById("rolloutUI");
 let canvasPixels = [];
 let shadedPixels = [];
 let shadedPixelsNums = [];
@@ -652,8 +653,8 @@ class Cloneagotchi {
                 lightsClock = 0;
             }
             else {
-                lightsClock++;
                 if (currentHour <= this.bedtime[1] || currentHour >= this.bedtime[0]) {
+                    lightsClock++;
                         this.cry()
                         this.checkCare();
                 }
@@ -1439,3 +1440,19 @@ function button3() {
 }
 
 canvasInit();
+
+
+function mouseEnteredZone() {
+    rolloutUI.classList.remove("closed");
+    rolloutUI.classList.add("rollout");
+}
+
+function mouseLeftZone() {
+    rolloutUI.classList.remove("rollout");
+    rolloutUI.classList.add("closed");
+}
+
+function changeGotchiColor(value) {
+    console.log(value);
+    document.getElementById("parentGotchi").style.backgroundColor = value;
+}
