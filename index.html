@@ -9,13 +9,13 @@
 </head>
 <body>
     <header>
-        <div id="rolloutContainer" onmouseover="mouseEnteredZone()" onmouseout="mouseLeftZone()">
+        <div id="rolloutContainer">
             <div id="rolloutUI" class="closed">
                 <h1 id="headTimer"></h1>
-                <button id="debug" onclick="drawPixelDebug()">Pixel Draw Debug Mode</button>
-                <button id="clearData" onclick="eraseDataDebug()">Erase All Data</button>
-                <button id="statsUpdate" onclick="debugStatShow()">Update Debug Stats</button>
-                <input type="color" id="color" name="color" value="#ff0000" onchange="changeGotchiColor(value)">
+                <button id="debug">Pixel Draw Debug Mode</button>
+                <button id="clearData">Erase All Data</button>
+                <button id="statsUpdate">Update Debug Stats</button>
+                <input type="color" id="color" name="color" value="#ff0000">
                 <p id="stats"></p>
                 <div id="rolloutTab"></div>
             </div>
@@ -38,9 +38,9 @@
                     <img class="menu grayedOut" src="img/moodIcon.png">
                 </div>
                 <div id="buttonContainer">
-                    <button class="buttons" id="button1" onclick="button1()"></button>
-                    <button class="buttons" id="button2" onclick="button2()"></button>
-                    <button class="buttons" id="button3" onclick="button3()"></button>
+                    <button class="buttons" id="button1"></button>
+                    <button class="buttons" id="button2"></button>
+                    <button class="buttons" id="button3"></button>
                 </div>
             </div>  
         </div>

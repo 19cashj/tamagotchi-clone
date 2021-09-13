@@ -1,3 +1,4 @@
+(function() {
 let gameState = "none";
 let cloneagotchi;
 let startSeconds;
@@ -30,6 +31,7 @@ let gameDecision;
 let gameCount = 0;
 let gameWinCount = 0;
 let foodTimeout;
+//Put all globals into a single object instead
 
 document.addEventListener('keydown', buttonChoose, false);
 
@@ -1452,7 +1454,18 @@ function mouseLeftZone() {
     rolloutUI.classList.add("closed");
 }
 
-function changeGotchiColor(value) {
-    console.log(value);
-    document.getElementById("parentGotchi").style.backgroundColor = value;
+function changeGotchiColor() {
+    document.getElementById("parentGotchi").style.backgroundColor = this.value;
 }
+
+document.getElementById("rolloutContainer").addEventListener('mouseover', mouseEnteredZone);
+document.getElementById("rolloutContainer").addEventListener('mouseout', mouseLeftZone);
+document.getElementById("debug").addEventListener('click', drawPixelDebug);
+document.getElementById("clearData").addEventListener('click', eraseDataDebug);
+document.getElementById("statsUpdate").addEventListener('click', debugStatShow);
+document.getElementById("color").addEventListener('input', changeGotchiColor);
+document.getElementById("button1").addEventListener('click', button1);
+document.getElementById("button2").addEventListener('click', button2);
+document.getElementById("button3").addEventListener('click', button3);
+
+}());
